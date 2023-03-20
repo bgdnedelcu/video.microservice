@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "videos")
-public class Videos {
+public class Video {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,10 +25,7 @@ public class Videos {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "likes_number")
-    private String likesNumber;
-
     @Column(name = "user_id")
-
+    private int idUser;
 
 }
