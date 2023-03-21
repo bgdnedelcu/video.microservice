@@ -3,6 +3,7 @@ package com.bogdan.video.microservice.security;
 import com.bogdan.video.microservice.filter.MyAuthorizationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -24,15 +25,15 @@ public class SecurityConfig {
                 .build();
         return new InMemoryUserDetailsManager(user);
     }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable();
+        http.httpBasic().disable();
+        http.formLogin().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeHttpRequests()
-                .requestMatchers("videoplatform/api/video/upload").permitAll()
-                .requestMatchers("/videoplatform/api/account/play/**").permitAll()
-                .anyRequest().authenticated();
+                .requestMatchers("videoplatform/api/video/upload").permitAll();
+        http.authorizeHttpRequests().anyRequest().authenticated();
         http.addFilterBefore(new MyAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
