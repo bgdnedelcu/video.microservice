@@ -2,9 +2,13 @@ package com.bogdan.video.microservice.controller;
 
 import com.bogdan.video.microservice.constants.AppConstants;
 import com.bogdan.video.microservice.dao.VideoDao;
+import com.bogdan.video.microservice.exception.VideoException;
 import com.bogdan.video.microservice.service.VideoService;
+import com.bogdan.video.microservice.view.Comment;
 import com.bogdan.video.microservice.view.Video;
 import com.bogdan.video.microservice.view.dto.PlayListVideo;
+import com.bogdan.video.microservice.view.dto.VideoCommentDto;
+import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,4 +76,35 @@ public class VideoContoller {
     public String findVideoTitleByVideoId(@PathVariable("videoId") final Long videoId){
         return videoService.findVideoTitleByVideoId(videoId);
     }
+
+    @PostMapping("addComment")
+    public void addComment(@RequestBody String content, @RequestParam("idVideo") Long idVideo){
+        videoService.addComment(content, idVideo);
+    }
+
+    @PostMapping("like/{videoId}")
+    public ResponseEntity likeVideo(@PathVariable("videoId") Long videoId){
+        return videoService.likeVideo(videoId);
+    }
+
+    @GetMapping("search/{text}")
+    public List<Video> search(@PathVariable("text") final String text) {
+        return videoService.search(text);
+    }
+
+    @GetMapping("videoById/{id}")
+    public Video getVideoById(@PathVariable("id") final Long id) throws VideoException {
+        return videoService.getVideoById(id);
+    }
+
+    @GetMapping("commentsByVideoId/{videoId}")
+    public List<VideoCommentDto> getCommentsByVideoId(@PathVariable("videoId") final Long id){
+        return videoService.getCommentsByVideoId(id);
+    }
+
+    @GetMapping("getVideoDetails/{videoId}")
+    public VideoDetailsDto getVideoDetails(@PathVariable("videoId") final Long id) throws VideoException {
+        return videoService.getVideoDetails(id);
+    }
+
 }

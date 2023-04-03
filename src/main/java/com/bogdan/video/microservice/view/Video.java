@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -27,5 +29,11 @@ public class Video {
 
     @Column(name = "user_id")
     private int idUser;
+
+    @Column(name = "likes")
+    private int likes;
+
+    @OneToMany(mappedBy = "video")
+    private List<Comment> commentsList;
 
 }

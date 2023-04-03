@@ -11,15 +11,15 @@ import java.util.Optional;
 
 public interface PlayListDao extends JpaRepository<PlayList, Long> {
 
-    public Optional<PlayList> findById(Long id);
+    Optional<PlayList> findById(Long id);
     @Modifying
     @Transactional
     @Query(value = "INSERT into playlist_video(video_id, playlist_id) values(:idvideo, :idplay)", nativeQuery = true)
-    public void insertPlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
+    void insertPlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
 
     @Modifying
     @Transactional
     @Query(value = "DELETE from playlist_video where video_id = :idvideo and playlist_id = :idplay", nativeQuery = true)
-    public void deletePlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
+    void deletePlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
 
 }

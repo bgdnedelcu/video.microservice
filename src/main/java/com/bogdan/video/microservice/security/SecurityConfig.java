@@ -3,7 +3,6 @@ package com.bogdan.video.microservice.security;
 import com.bogdan.video.microservice.filter.MyAuthorizationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,8 +31,9 @@ public class SecurityConfig {
         http.formLogin().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeHttpRequests()
-                .requestMatchers("videoplatform/api/video/upload").permitAll();
-        http.authorizeHttpRequests().anyRequest().authenticated();
+                .requestMatchers("/videoplatform/api/video/play/**").permitAll()
+//                .requestMatchers("/videoplatform/api/video/videoById/**").permitAll()
+                .anyRequest().authenticated();
         http.addFilterBefore(new MyAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
