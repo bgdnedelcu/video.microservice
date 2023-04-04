@@ -107,4 +107,10 @@ public class VideoContoller {
         return videoService.getVideoDetails(id);
     }
 
+    @PostMapping("deleteLike/{videoId}")
+    public ResponseEntity deleteLike(@PathVariable("videoId") final Long videoId){
+        return videoService.deletLike(videoId);
+    }
+
+
 }

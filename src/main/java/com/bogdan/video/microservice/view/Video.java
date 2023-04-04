@@ -30,10 +30,10 @@ public class Video {
     @Column(name = "user_id")
     private int idUser;
 
-    @Column(name = "likes")
-    private int likes;
-
     @OneToMany(mappedBy = "video")
     private List<Comment> commentsList;
+
+    @OneToMany(mappedBy = "video")
+    private List<VideoLikes> videoLikesList;
 
 }

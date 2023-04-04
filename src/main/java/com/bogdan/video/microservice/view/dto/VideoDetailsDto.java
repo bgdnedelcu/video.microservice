@@ -14,7 +14,7 @@ public class VideoDetailsDto {
     private String videoTitle;
     private String description;
     private String videoChannelName;
-
     private Integer likes;
+    private boolean isLiked;
 
 }

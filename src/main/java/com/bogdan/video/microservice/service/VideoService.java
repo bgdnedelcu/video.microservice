@@ -2,14 +2,17 @@ package com.bogdan.video.microservice.service;
 
 import com.bogdan.video.microservice.constants.AppConstants;
 import com.bogdan.video.microservice.dao.CommentDao;
+import com.bogdan.video.microservice.dao.LikeDao;
 import com.bogdan.video.microservice.dao.PlayListDao;
 import com.bogdan.video.microservice.dao.VideoDao;
 import com.bogdan.video.microservice.exception.VideoException;
 import com.bogdan.video.microservice.view.Comment;
 import com.bogdan.video.microservice.view.PlayList;
 import com.bogdan.video.microservice.view.Video;
+import com.bogdan.video.microservice.view.VideoLikes;
 import com.bogdan.video.microservice.view.dto.VideoCommentDto;
 import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,19 +30,15 @@ import java.util.*;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class VideoService {
 
     private final VideoDao videoDao;
     private final RestTemplate restTemplate;
     private final PlayListDao playListDao;
     private final CommentDao commentDao;
+    private final LikeDao likeDao;
 
-    public VideoService(VideoDao videoDao, RestTemplate restTemplate, PlayListDao playListDao, CommentDao commentDao) {
-        this.videoDao = videoDao;
-        this.restTemplate = restTemplate;
-        this.playListDao = playListDao;
-        this.commentDao = commentDao;
-    }
 
     public Page<Video> loadVideos(Pageable pageable) {
         return videoDao.findAll(pageable);
@@ -59,7 +58,6 @@ public class VideoService {
             newVideo.setTitle(title);
             newVideo.setDescription(description);
             newVideo.setIdUser(getIdFromAccountMicroservice(getEmailFromToken()));
-            newVideo.setLikes(0);
             newVideo = videoDao.save(newVideo);
 
 
@@ -150,20 +148,30 @@ public class VideoService {
     }
 
     public ResponseEntity likeVideo(final Long videoId)  {
-        final Optional<Video> optionalVideo = videoDao.findById(videoId);
+        Integer currentId = getIdFromAccountMicroservice(getEmailFromToken());
+        final VideoLikes videoLikes = new VideoLikes();
+        final Video video = new Video();
+        video.setId(videoId);
+        videoLikes.setVideo(video);
+        videoLikes.setIdUser(currentId);
+        videoLikes.setLiked(1);
 
-        if (optionalVideo.isPresent()) {
-               final Video video = optionalVideo.get();
-               video.setLikes(video.getLikes() + 1);
-               videoDao.save(video);
-        }else {
-            return ResponseEntity.badRequest().body("Nu s-a inregistrat like-ul");
-        }
+        likeDao.save(videoLikes);
+
         return ResponseEntity.ok().body("Like-ul a fost inregistrat");
 
     }
 
-    public List<Video> search(final String text) {
+    public ResponseEntity deletLike(final Long videoId) {
+        Integer currentId = getIdFromAccountMicroservice(getEmailFromToken());
+
+        likeDao.deleteLike(videoId, Long.valueOf(currentId));
+
+        return ResponseEntity.ok().body("Like-ul a fost actualizat");
+
+    }
+
+        public List<Video> search(final String text) {
         List<Video> videos = new ArrayList<Video>();
         videos.addAll(videoDao.findByTitleOrDescription(text));
         return videos;
@@ -179,7 +187,7 @@ public class VideoService {
 
     }
     public List<VideoCommentDto> getCommentsByVideoId(Long videoId) {
-        List<Comment> commentsList = commentDao.findByVideoId(videoId);
+        List<Comment> commentsList = commentDao.findByVideoIdOrderByIdDesc(videoId);
         final List<VideoCommentDto> videoCommentDtos = new ArrayList<>();
         commentsList.forEach((item) -> {
         final VideoCommentDto videoCommentDto = new VideoCommentDto();
@@ -216,7 +224,13 @@ public class VideoService {
         }else {
             videoDetailsDto.setVideoTitle(videoOptional.get().getTitle());
             videoDetailsDto.setDescription(videoOptional.get().getDescription());
-            videoDetailsDto.setLikes(videoOptional.get().getLikes());
+            videoDetailsDto.setLikes(videoOptional.get().getVideoLikesList().size());
+            Integer currentiD = getIdFromAccountMicroservice(getEmailFromToken());
+            for(VideoLikes videoLikes : videoOptional.get().getVideoLikesList()) {
+                if (videoLikes.getIdUser() == currentiD) {
+                    videoDetailsDto.setLiked(true);
+                }
+            }
             String channelName = null;
             try {
                 channelName = getChannelNameByUserId((long) videoOptional.get().getIdUser());
@@ -227,5 +241,6 @@ public class VideoService {
         }
         return videoDetailsDto;
     }
+
 }
 
