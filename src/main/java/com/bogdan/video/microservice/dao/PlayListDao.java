@@ -15,11 +15,11 @@ public interface PlayListDao extends JpaRepository<PlayList, Long> {
     @Modifying
     @Transactional
     @Query(value = "INSERT into playlist_video(video_id, playlist_id) values(:idvideo, :idplay)", nativeQuery = true)
-    void insertPlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
+    int insertPlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
 
     @Modifying
     @Transactional
     @Query(value = "DELETE from playlist_video where video_id = :idvideo and playlist_id = :idplay", nativeQuery = true)
-    void deletePlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
+    int deletePlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
 
 }

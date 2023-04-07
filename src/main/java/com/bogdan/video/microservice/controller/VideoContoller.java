@@ -4,14 +4,14 @@ import com.bogdan.video.microservice.constants.AppConstants;
 import com.bogdan.video.microservice.dao.VideoDao;
 import com.bogdan.video.microservice.exception.VideoException;
 import com.bogdan.video.microservice.service.VideoService;
-import com.bogdan.video.microservice.view.Comment;
 import com.bogdan.video.microservice.view.Video;
 import com.bogdan.video.microservice.view.dto.PlayListVideo;
 import com.bogdan.video.microservice.view.dto.VideoCommentDto;
 import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
+import com.bogdan.video.microservice.view.dto.VideoForHomeDto;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,19 +28,27 @@ public class VideoContoller {
     private VideoService videoService;
     private VideoDao videoDao;
 
-    public VideoContoller(VideoService videoService, VideoDao videoDao){
+    public VideoContoller(VideoService videoService, VideoDao videoDao) {
         this.videoService = videoService;
         this.videoDao = videoDao;
     }
 
     @GetMapping("home")
-    public List<Video> loadVideos(Pageable pageable) {
-        Page<Video> videos = videoService.loadVideos(pageable);
-        return videos.getContent();
+    public ResponseEntity<List<VideoForHomeDto>> loadVideos(Pageable pageable) {
+        List<VideoForHomeDto> videos = videoService.loadVideos(pageable);
+
+        return ResponseEntity.status(HttpStatus.OK).body(videos);
     }
 
+    @GetMapping("search/{text}")
+    public ResponseEntity<List<VideoForHomeDto>> search(@PathVariable("text") final String text) {
+        List<VideoForHomeDto> videos = videoService.loadVideosForSearch(text);
+        return ResponseEntity.status(HttpStatus.OK).body(videos);
+    }
+
+
     @GetMapping("home/allVideos")
-    public List<Video> allVideos(){
+    public List<Video> allVideos() {
         return videoService.getAllVideos();
     }
 
@@ -59,12 +67,14 @@ public class VideoContoller {
 
     @PostMapping("insertToPlaylist")
     public ResponseEntity insertToPlaylist(@RequestBody final PlayListVideo playListVideo) {
-        return videoService.addVideoToPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
+        int id = videoService.addVideoToPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
+        return ResponseEntity.ok(id);
     }
 
     @PostMapping("removeVideoFromPlaylist")
-    public ResponseEntity removeVideoFromPlayList(@RequestBody final PlayListVideo playListVideo){
-        return videoService.removeVideoFromPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
+    public ResponseEntity<String> removeVideoFromPlayList(@RequestBody final PlayListVideo playListVideo) {
+        int noOfDeletedRows = videoService.removeVideoFromPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
+        return ResponseEntity.status(HttpStatus.OK).body(String.format("deleted %s rows", noOfDeletedRows));
     }
 
     @GetMapping("playList/{idplayList}")
@@ -73,24 +83,20 @@ public class VideoContoller {
     }
 
     @GetMapping("videoTitle/{videoId}")
-    public String findVideoTitleByVideoId(@PathVariable("videoId") final Long videoId){
+    public String findVideoTitleByVideoId(@PathVariable("videoId") final Long videoId) {
         return videoService.findVideoTitleByVideoId(videoId);
     }
 
     @PostMapping("addComment")
-    public void addComment(@RequestBody String content, @RequestParam("idVideo") Long idVideo){
+    public void addComment(@RequestBody String content, @RequestParam("idVideo") Long idVideo) {
         videoService.addComment(content, idVideo);
     }
 
     @PostMapping("like/{videoId}")
-    public ResponseEntity likeVideo(@PathVariable("videoId") Long videoId){
+    public ResponseEntity likeVideo(@PathVariable("videoId") Long videoId) {
         return videoService.likeVideo(videoId);
     }
 
-    @GetMapping("search/{text}")
-    public List<Video> search(@PathVariable("text") final String text) {
-        return videoService.search(text);
-    }
 
     @GetMapping("videoById/{id}")
     public Video getVideoById(@PathVariable("id") final Long id) throws VideoException {
@@ -98,7 +104,7 @@ public class VideoContoller {
     }
 
     @GetMapping("commentsByVideoId/{videoId}")
-    public List<VideoCommentDto> getCommentsByVideoId(@PathVariable("videoId") final Long id){
+    public List<VideoCommentDto> getCommentsByVideoId(@PathVariable("videoId") final Long id) {
         return videoService.getCommentsByVideoId(id);
     }
 
@@ -108,9 +114,8 @@ public class VideoContoller {
     }
 
     @PostMapping("deleteLike/{videoId}")
-    public ResponseEntity deleteLike(@PathVariable("videoId") final Long videoId){
+    public ResponseEntity deleteLike(@PathVariable("videoId") final Long videoId) {
         return videoService.deletLike(videoId);
     }
-
 
 }
