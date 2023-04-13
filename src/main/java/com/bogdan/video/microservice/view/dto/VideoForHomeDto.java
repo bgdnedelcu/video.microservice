@@ -10,7 +10,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class VideoForHomeDto {
+
     private Long videoId;
     private String videoTitle;
     private String videoChannel;
+
 }

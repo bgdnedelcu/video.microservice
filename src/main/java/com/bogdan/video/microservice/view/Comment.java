@@ -3,9 +3,9 @@ package com.bogdan.video.microservice.view;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-        import lombok.Getter;
-        import lombok.NoArgsConstructor;
-        import lombok.Setter;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -30,4 +30,5 @@ public class Comment {
     @JsonIgnore
     @JoinColumn(name = "video_id")
     private Video video;
+
 }

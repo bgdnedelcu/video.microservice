@@ -15,18 +15,18 @@ import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
 import com.bogdan.video.microservice.view.dto.VideoForHomeDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.*;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -34,15 +34,11 @@ import java.util.*;
 public class VideoService {
 
     private final VideoDao videoDao;
-    private final RestTemplate restTemplate;
     private final PlayListDao playListDao;
     private final CommentDao commentDao;
     private final LikeDao likeDao;
-
-
-//    public Page<Video> loadVideos(Pageable pageable) {
-//        return videoDao.findAll(pageable);
-//    }
+    @Autowired
+    private final UtilityService utilityService;
 
     public List<VideoForHomeDto> loadVideos(Pageable pageable) {
         List<Video> videosPage = videoDao.findAll(pageable).getContent();
@@ -52,13 +48,44 @@ public class VideoService {
             VideoForHomeDto videoForHomeDto = new VideoForHomeDto();
             videoForHomeDto.setVideoId(video.getId());
             videoForHomeDto.setVideoTitle(video.getTitle());
-            videoForHomeDto.setVideoChannel(getChannelNameByUserId((long) video.getIdUser()));
+            videoForHomeDto.setVideoChannel(utilityService.getChannelNameByUserId((long) video.getIdUser()));
             videoForHomeDtos.add(videoForHomeDto);
         }
         return videoForHomeDtos;
     }
 
-    public List<VideoForHomeDto> loadVideosForSearch(String searchText){
+    public List<VideoForHomeDto> getVideosFromPlayList(final Long idPlayList) {
+        final PlayList playList = playListDao.findById(idPlayList).get();
+
+        final List<Video> videosPage = playList.getVideos();
+
+        List<VideoForHomeDto> videoForHomeDtos = new ArrayList<>();
+        for (Video video : videosPage) {
+            VideoForHomeDto videoForHomeDto = new VideoForHomeDto();
+            videoForHomeDto.setVideoId(video.getId());
+            videoForHomeDto.setVideoTitle(video.getTitle());
+            videoForHomeDto.setVideoChannel(utilityService.getChannelNameByUserId((long) video.getIdUser()));
+            videoForHomeDtos.add(videoForHomeDto);
+        }
+        return videoForHomeDtos;
+    }
+
+    public List<VideoForHomeDto> getVideoByChannelName(final String channelName) {
+
+        final List<Video> videos = videoDao.findAllByIdUser(utilityService.getIdByChannelName(channelName));
+
+        List<VideoForHomeDto> videoForHomeDtos = new ArrayList<>();
+        for (Video video : videos) {
+            VideoForHomeDto videoForHomeDto = new VideoForHomeDto();
+            videoForHomeDto.setVideoId(video.getId());
+            videoForHomeDto.setVideoTitle(video.getTitle());
+            videoForHomeDto.setVideoChannel(utilityService.getChannelNameByUserId((long) video.getIdUser()));
+            videoForHomeDtos.add(videoForHomeDto);
+        }
+        return videoForHomeDtos;
+    }
+
+    public List<VideoForHomeDto> loadVideosForSearch(String searchText) {
         List<Video> videosPage = videoDao.findByTitleOrDescription(searchText);
         List<VideoForHomeDto> videoForHomeDtos = new ArrayList<>();
 
@@ -66,15 +93,12 @@ public class VideoService {
             VideoForHomeDto videoForHomeDto = new VideoForHomeDto();
             videoForHomeDto.setVideoId(video.getId());
             videoForHomeDto.setVideoTitle(video.getTitle());
-            videoForHomeDto.setVideoChannel(getChannelNameByUserId((long) video.getIdUser()));
+            videoForHomeDto.setVideoChannel(utilityService.getChannelNameByUserId((long) video.getIdUser()));
             videoForHomeDtos.add(videoForHomeDto);
         }
         return videoForHomeDtos;
     }
 
-    public List<Video> getAllVideos() {
-        return videoDao.findAll();
-    }
 
     public ResponseEntity<String> uploadVideo(String title, String description, MultipartFile inputFile) {
         final String EXTENSION = ".mp4";
@@ -85,7 +109,7 @@ public class VideoService {
             Video newVideo = new Video();
             newVideo.setTitle(title);
             newVideo.setDescription(description);
-            newVideo.setIdUser(getIdFromAccountMicroservice(getEmailFromToken()));
+            newVideo.setIdUser(utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken()));
             newVideo = videoDao.save(newVideo);
 
 
@@ -100,29 +124,6 @@ public class VideoService {
         }
     }
 
-    private String getEmailFromToken() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getName();
-    }
-
-    private Integer getIdFromAccountMicroservice(final String email) {
-        ResponseEntity<Integer> response = null;
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            Map<String, String> payload = new HashMap<>();
-            payload.put("email", email);
-
-            HttpEntity<Map<String, String>> request = new HttpEntity<>(payload, headers);
-            response = restTemplate.postForEntity("http://localhost:8080/videoplatform/api/account/getIdByEmail", request, Integer.class);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return response.getBody();
-    }
-
     public int addVideoToPlaylist(final Long idVideo, final Long idPlayList) {
 
         return playListDao.insertPlayListVideo(idVideo, idPlayList);
@@ -130,15 +131,12 @@ public class VideoService {
 
     public int removeVideoFromPlaylist(final Long idVideo, final Long idPlayList) {
 
-        return playListDao.deletePlayListVideo(idVideo, idPlayList);
-
+        return playListDao.deleteVideoFromPlaylist(idVideo, idPlayList);
     }
 
-    public List<Video> getVideosFromPlayList(final Long idPlayList) {
-        final PlayList playList = playListDao.findById(idPlayList).get();
-        final List<Video> videos = new ArrayList<>();
-        videos.addAll(playList.getVideos());
-        return videos;
+
+    public int deleteAllVideosFromPlaylist(final Long idPlayList){
+        return playListDao.deleteAllVideosFromPlaylist(idPlayList);
     }
 
     public String findVideoTitleByVideoId(final Long id) {
@@ -149,7 +147,7 @@ public class VideoService {
     public ResponseEntity addComment(final String content, final Long videoId) {
 
         final Comment comment = new Comment();
-        comment.setIdUser(getIdFromAccountMicroservice(getEmailFromToken()));
+        comment.setIdUser(utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken()));
         log.debug(String.valueOf(comment.getIdUser()));
         comment.setContent(content);
         log.debug(content);
@@ -162,7 +160,7 @@ public class VideoService {
     }
 
     public ResponseEntity likeVideo(final Long videoId) {
-        Integer currentId = getIdFromAccountMicroservice(getEmailFromToken());
+        Integer currentId = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
         final VideoLikes videoLikes = new VideoLikes();
         final Video video = new Video();
         video.setId(videoId);
@@ -176,8 +174,8 @@ public class VideoService {
 
     }
 
-    public ResponseEntity deletLike(final Long videoId) {
-        Integer currentId = getIdFromAccountMicroservice(getEmailFromToken());
+    public ResponseEntity deleteLike(final Long videoId) {
+        Integer currentId = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
 
         likeDao.deleteLike(videoId, Long.valueOf(currentId));
 
@@ -185,16 +183,10 @@ public class VideoService {
 
     }
 
-//    public List<Video> search(final String text) {
-//        List<Video> videos = new ArrayList<Video>();
-//        videos.addAll(videoDao.findByTitleOrDescription(text));
-//        return videos;
-//    }
-
     public Video getVideoById(Long id) {
         Optional<Video> video = videoDao.findById(id);
 
-        if (!video.isPresent()) {
+        if (video.isEmpty()) {
             throw new VideoException("Nu am gasit video-ul");
         }
         return video.get();
@@ -208,7 +200,7 @@ public class VideoService {
             final VideoCommentDto videoCommentDto = new VideoCommentDto();
             videoCommentDto.setIdComment(item.getId());
             videoCommentDto.setIdUser((long) item.getIdUser());
-            String channelName = getChannelNameByUserId((long) item.getIdUser());
+            String channelName = utilityService.getChannelNameByUserId((long) item.getIdUser());
             videoCommentDto.setChannelName(channelName);
             videoCommentDto.setComment(item.getContent());
             videoCommentDtos.add(videoCommentDto);
@@ -216,35 +208,26 @@ public class VideoService {
         return videoCommentDtos;
     }
 
-    public String getChannelNameByUserId(Long userId) {
-        String url = "http://localhost:8080/videoplatform/api/account/channelNameById/" + userId;
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-        if (response.getStatusCode() != HttpStatus.OK) {
-            throw new VideoException("Nu am gasit user-ul");
-        }
-
-        return response.getBody();
-    }
-
     public VideoDetailsDto getVideoDetails(Long videoId) throws VideoException {
         final Optional<Video> videoOptional = videoDao.findById(videoId);
         VideoDetailsDto videoDetailsDto = new VideoDetailsDto();
-        if (!videoOptional.isPresent()) {
+        if (videoOptional.isEmpty()) {
             throw new VideoException("Not found");
         }
 
         videoDetailsDto.setVideoTitle(videoOptional.get().getTitle());
         videoDetailsDto.setDescription(videoOptional.get().getDescription());
         videoDetailsDto.setLikes(videoOptional.get().getVideoLikesList().size());
-        Integer currentiD = getIdFromAccountMicroservice(getEmailFromToken());
+        Integer currentiD = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
         for (VideoLikes videoLikes : videoOptional.get().getVideoLikesList()) {
             if (videoLikes.getIdUser() == currentiD) {
                 videoDetailsDto.setLiked(true);
             }
         }
-        String channelName = getChannelNameByUserId((long) videoOptional.get().getIdUser());
+        String channelName = utilityService.getChannelNameByUserId((long) videoOptional.get().getIdUser());
         videoDetailsDto.setVideoChannelName(channelName);
         return videoDetailsDto;
     }
+
 }
 

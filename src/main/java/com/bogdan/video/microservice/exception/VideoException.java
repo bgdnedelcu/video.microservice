@@ -5,4 +5,5 @@ public class VideoException extends RuntimeException {
     public VideoException(final String message){
         super(message);
     }
+
 }

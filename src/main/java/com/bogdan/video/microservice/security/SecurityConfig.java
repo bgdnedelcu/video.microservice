@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .build();
         return new InMemoryUserDetailsManager(user);
     }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable();
@@ -32,7 +33,8 @@ public class SecurityConfig {
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeHttpRequests()
                 .requestMatchers("/videoplatform/api/video/play/**").permitAll()
-//                .requestMatchers("/videoplatform/api/video/videoById/**").permitAll()
+                .requestMatchers("/videoplatform/api/video/commentsByVideoId/**").permitAll()
+                .requestMatchers("/videoplatform/api/video/getVideoDetails/**").permitAll()
                 .anyRequest().authenticated();
         http.addFilterBefore(new MyAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();

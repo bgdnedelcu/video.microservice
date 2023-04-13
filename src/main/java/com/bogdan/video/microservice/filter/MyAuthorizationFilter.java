@@ -5,9 +5,9 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.bogdan.video.microservice.constants.AppConstants;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MyAuthorizationFilter extends OncePerRequestFilter {
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -48,4 +49,5 @@ public class MyAuthorizationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         }
     }
+
 }

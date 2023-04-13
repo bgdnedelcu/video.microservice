@@ -7,11 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
-
 public interface PlayListDao extends JpaRepository<PlayList, Long> {
-
-    Optional<PlayList> findById(Long id);
     @Modifying
     @Transactional
     @Query(value = "INSERT into playlist_video(video_id, playlist_id) values(:idvideo, :idplay)", nativeQuery = true)
@@ -20,6 +16,11 @@ public interface PlayListDao extends JpaRepository<PlayList, Long> {
     @Modifying
     @Transactional
     @Query(value = "DELETE from playlist_video where video_id = :idvideo and playlist_id = :idplay", nativeQuery = true)
-    int deletePlayListVideo(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
+    int deleteVideoFromPlaylist(@Param("idvideo") Long idVideo, @Param("idplay") final Long idPlay);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM playlist_video WHERE playlist_id = :idPlay", nativeQuery = true)
+    int deleteAllVideosFromPlaylist(@Param("idPlay") Long idPlay);
 
 }

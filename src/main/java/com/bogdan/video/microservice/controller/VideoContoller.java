@@ -1,7 +1,6 @@
 package com.bogdan.video.microservice.controller;
 
 import com.bogdan.video.microservice.constants.AppConstants;
-import com.bogdan.video.microservice.dao.VideoDao;
 import com.bogdan.video.microservice.exception.VideoException;
 import com.bogdan.video.microservice.service.VideoService;
 import com.bogdan.video.microservice.view.Video;
@@ -14,23 +13,26 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
 @RequestMapping("videoplatform/api/video")
 public class VideoContoller {
 
-    private VideoService videoService;
-    private VideoDao videoDao;
+    private final VideoService videoService;
 
-    public VideoContoller(VideoService videoService, VideoDao videoDao) {
+    public VideoContoller(VideoService videoService) {
         this.videoService = videoService;
-        this.videoDao = videoDao;
     }
 
     @GetMapping("home")
@@ -44,12 +46,6 @@ public class VideoContoller {
     public ResponseEntity<List<VideoForHomeDto>> search(@PathVariable("text") final String text) {
         List<VideoForHomeDto> videos = videoService.loadVideosForSearch(text);
         return ResponseEntity.status(HttpStatus.OK).body(videos);
-    }
-
-
-    @GetMapping("home/allVideos")
-    public List<Video> allVideos() {
-        return videoService.getAllVideos();
     }
 
     @PostMapping(value = "upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -77,8 +73,14 @@ public class VideoContoller {
         return ResponseEntity.status(HttpStatus.OK).body(String.format("deleted %s rows", noOfDeletedRows));
     }
 
+    @PostMapping("deleteAllVideosFromPlaylist")
+    public ResponseEntity<String> deleteAllVideosFromPlaylist(@RequestBody final PlayListVideo playListVideo) {
+        int noOfDeletedRows = videoService.deleteAllVideosFromPlaylist(playListVideo.getIdPlayList());
+        return ResponseEntity.status(HttpStatus.OK).body(String.format("deleted %s rows", noOfDeletedRows));
+    }
+
     @GetMapping("playList/{idplayList}")
-    public List<Video> getVideosFromPlayList(@PathVariable("idplayList") final Long idPlayList) {
+    public List<VideoForHomeDto> getVideosFromPlayList(@PathVariable("idplayList") final Long idPlayList) {
         return videoService.getVideosFromPlayList(idPlayList);
     }
 
@@ -115,7 +117,12 @@ public class VideoContoller {
 
     @PostMapping("deleteLike/{videoId}")
     public ResponseEntity deleteLike(@PathVariable("videoId") final Long videoId) {
-        return videoService.deletLike(videoId);
+        return videoService.deleteLike(videoId);
+    }
+
+    @GetMapping("getVideosByChannelName/{channelName}")
+    public List<VideoForHomeDto> getVideosByChannelName(@PathVariable("channelName") final String channelName){
+        return videoService.getVideoByChannelName(channelName);
     }
 
 }

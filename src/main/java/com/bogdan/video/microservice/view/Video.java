@@ -1,5 +1,6 @@
 package com.bogdan.video.microservice.view;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,9 +31,11 @@ public class Video {
     @Column(name = "user_id")
     private int idUser;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "video")
     private List<Comment> commentsList;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "video")
     private List<VideoLikes> videoLikesList;
 
