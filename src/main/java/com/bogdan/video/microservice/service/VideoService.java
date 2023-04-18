@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -227,6 +228,16 @@ public class VideoService {
         String channelName = utilityService.getChannelNameByUserId((long) videoOptional.get().getIdUser());
         videoDetailsDto.setVideoChannelName(channelName);
         return videoDetailsDto;
+    }
+
+    public ResponseEntity getLogUserId() {
+       long id = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
+       return ResponseEntity.ok().body(id);
+    }
+
+    public ResponseEntity deleteCommentById(Long commentId) {
+        commentDao.deleteById(commentId);
+        return ResponseEntity.ok().body("Comment has been deleted");
     }
 
 }

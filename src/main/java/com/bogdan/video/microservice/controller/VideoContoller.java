@@ -125,4 +125,14 @@ public class VideoContoller {
         return videoService.getVideoByChannelName(channelName);
     }
 
+    @GetMapping("getLogUserId")
+    public ResponseEntity getLogUserId() {
+        return videoService.getLogUserId();
+    }
+
+    @DeleteMapping("deleteCommentById/{id}")
+    public ResponseEntity deleteCommentById(@PathVariable("id") final Long commentId){
+        return videoService.deleteCommentById(commentId);
+    }
+
 }
