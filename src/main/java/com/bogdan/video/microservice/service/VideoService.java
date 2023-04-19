@@ -127,6 +127,11 @@ public class VideoService {
 
     public int addVideoToPlaylist(final Long idVideo, final Long idPlayList) {
 
+        final int noOfRecords = playListDao.checkIfExistsRecords(idVideo, idPlayList);
+        if (noOfRecords > 0) {
+            throw new VideoException(String.format("Video with id %d already exists in playlist with id %d", idVideo, idPlayList));
+        }
+
         return playListDao.insertPlayListVideo(idVideo, idPlayList);
     }
 

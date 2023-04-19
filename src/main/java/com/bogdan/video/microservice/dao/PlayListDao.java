@@ -23,4 +23,7 @@ public interface PlayListDao extends JpaRepository<PlayList, Long> {
     @Query(value = "DELETE FROM playlist_video WHERE playlist_id = :idPlay", nativeQuery = true)
     int deleteAllVideosFromPlaylist(@Param("idPlay") Long idPlay);
 
+    @Query(value = "SELECT COUNT(*) FROM playlist_video WHERE video_id = :idvideo AND playlist_id = :idplay", nativeQuery = true)
+    int checkIfExistsRecords(@Param("idvideo") final Long idVideo, @Param("idplay") final Long idPlay);
+
 }

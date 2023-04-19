@@ -24,7 +24,7 @@ public class UtilityService {
         return authentication.getName();
     }
 
-    public synchronized Integer getIdFromAccountMicroservice(final String email) {
+    public Integer getIdFromAccountMicroservice(final String email) {
         ResponseEntity<Integer> response = null;
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -42,7 +42,7 @@ public class UtilityService {
         return response.getBody();
     }
 
-    public synchronized String getChannelNameByUserId(Long userId) {
+    public String getChannelNameByUserId(Long userId) {
         String url = "http://localhost:8080/videoplatform/api/account/channelNameById/" + userId;
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
         if (response.getStatusCode() != HttpStatus.OK) {
