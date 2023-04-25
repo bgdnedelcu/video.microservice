@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface PlayListDao extends JpaRepository<PlayList, Long> {
     @Modifying
     @Transactional
@@ -25,5 +27,7 @@ public interface PlayListDao extends JpaRepository<PlayList, Long> {
 
     @Query(value = "SELECT COUNT(*) FROM playlist_video WHERE video_id = :idvideo AND playlist_id = :idplay", nativeQuery = true)
     int checkIfExistsRecords(@Param("idvideo") final Long idVideo, @Param("idplay") final Long idPlay);
+
+    List<PlayList> findByVideosId(Long videoId);
 
 }

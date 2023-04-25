@@ -17,11 +17,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.http.HttpResponse;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,8 +43,7 @@ public class VideoService {
     private final LikeDao likeDao;
     @Autowired
     private final UtilityService utilityService;
-
-    public List<VideoForHomeDto> loadVideos(Pageable pageable) {
+    public List<VideoForHomeDto> loadVideos( Pageable pageable) {
         List<Video> videosPage = videoDao.findAll(pageable).getContent();
 
         List<VideoForHomeDto> videoForHomeDtos = new ArrayList<>();
@@ -86,7 +88,7 @@ public class VideoService {
         return videoForHomeDtos;
     }
 
-    public List<VideoForHomeDto> loadVideosForSearch(String searchText) {
+    public List<VideoForHomeDto> loadVideosForSearch(final String searchText) {
         List<Video> videosPage = videoDao.findByTitleOrDescription(searchText);
         List<VideoForHomeDto> videoForHomeDtos = new ArrayList<>();
 
@@ -101,7 +103,7 @@ public class VideoService {
     }
 
 
-    public ResponseEntity<String> uploadVideo(String title, String description, MultipartFile inputFile) {
+    public ResponseEntity<String> uploadVideo(final String title, final String description, MultipartFile inputFile) {
         final String EXTENSION = ".mp4";
         try {
             if (!"video/mp4".equals(inputFile.getContentType())) {
@@ -141,7 +143,7 @@ public class VideoService {
     }
 
 
-    public int deleteAllVideosFromPlaylist(final Long idPlayList){
+    public int deleteAllVideosFromPlaylist(final Long idPlayList) {
         return playListDao.deleteAllVideosFromPlaylist(idPlayList);
     }
 
@@ -189,7 +191,7 @@ public class VideoService {
 
     }
 
-    public Video getVideoById(Long id) {
+    public Video getVideoById(final Long id) {
         Optional<Video> video = videoDao.findById(id);
 
         if (video.isEmpty()) {
@@ -199,7 +201,7 @@ public class VideoService {
 
     }
 
-    public List<VideoCommentDto> getCommentsByVideoId(Long videoId) {
+    public List<VideoCommentDto> getCommentsByVideoId(final Long videoId) {
         List<Comment> commentsList = commentDao.findByVideoIdOrderByIdDesc(videoId);
         final List<VideoCommentDto> videoCommentDtos = new ArrayList<>();
         commentsList.forEach((item) -> {
@@ -214,7 +216,7 @@ public class VideoService {
         return videoCommentDtos;
     }
 
-    public VideoDetailsDto getVideoDetails(Long videoId) throws VideoException {
+    public VideoDetailsDto getVideoDetails(final Long videoId) throws VideoException {
         final Optional<Video> videoOptional = videoDao.findById(videoId);
         VideoDetailsDto videoDetailsDto = new VideoDetailsDto();
         if (videoOptional.isEmpty()) {
@@ -236,13 +238,36 @@ public class VideoService {
     }
 
     public ResponseEntity getLogUserId() {
-       long id = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
-       return ResponseEntity.ok().body(id);
+        long id = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
+        return ResponseEntity.ok().body(id);
     }
 
-    public ResponseEntity deleteCommentById(Long commentId) {
+    public ResponseEntity deleteCommentById(final Long commentId) {
         commentDao.deleteById(commentId);
         return ResponseEntity.ok().body("Comment has been deleted");
+    }
+
+    public ResponseEntity deleteVideoById(final Long videoId) {
+        Video videoToDelete = videoDao.findById(videoId).orElse(null);
+        if (videoToDelete == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Video not found");
+        }
+
+        List<PlayList> playlists = playListDao.findByVideosId(videoId);
+        for (PlayList playlist : playlists) {
+            playlist.getVideos().removeIf(video -> video.getId().equals(videoId));
+            playListDao.save(playlist);
+        }
+
+        videoDao.deleteById(videoId);
+
+        final String EXTENSION = ".mp4";
+        File fileToDelete = new File(AppConstants.STORAGE_PATH + videoToDelete.getId() + EXTENSION);
+        if (fileToDelete.delete()) {
+            return ResponseEntity.ok().body("Video has been deleted");
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete video");
+        }
     }
 
 }

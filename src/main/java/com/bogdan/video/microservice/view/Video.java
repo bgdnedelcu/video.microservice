@@ -32,11 +32,14 @@ public class Video {
     private int idUser;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "video")
+    @OneToMany(mappedBy = "video", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> commentsList;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "video")
+    @OneToMany(mappedBy = "video", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VideoLikes> videoLikesList;
+
+//    @ManyToMany(mappedBy = "videos", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+//    private List<PlayList> playlists;
 
 }

@@ -10,19 +10,16 @@ import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
 import com.bogdan.video.microservice.view.dto.VideoForHomeDto;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -36,7 +33,7 @@ public class VideoContoller {
     }
 
     @GetMapping("home")
-    public ResponseEntity<List<VideoForHomeDto>> loadVideos(Pageable pageable) {
+    public ResponseEntity<List<VideoForHomeDto>> loadVideos(@PageableDefault(sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         List<VideoForHomeDto> videos = videoService.loadVideos(pageable);
 
         return ResponseEntity.status(HttpStatus.OK).body(videos);
@@ -133,6 +130,11 @@ public class VideoContoller {
     @DeleteMapping("deleteCommentById/{id}")
     public ResponseEntity deleteCommentById(@PathVariable("id") final Long commentId){
         return videoService.deleteCommentById(commentId);
+    }
+
+    @DeleteMapping("deleteVideoById/{id}")
+    public ResponseEntity deleteVideoById(@PathVariable("id") final Long videoId){
+        return videoService.deleteVideoById(videoId);
     }
 
 }
