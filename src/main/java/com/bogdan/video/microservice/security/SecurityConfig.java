@@ -35,6 +35,8 @@ public class SecurityConfig {
                 .requestMatchers("/videoplatform/api/video/play/**").permitAll()
                 .requestMatchers("/videoplatform/api/video/commentsByVideoId/**").permitAll()
                 .requestMatchers("/videoplatform/api/video/getVideoDetails/**").permitAll()
+                .requestMatchers("/videoplatform/api/video/checkVideoId/**").permitAll()
+                .requestMatchers("/videoplatform/api/video/videoDetailsForNonUsers/**").permitAll()
                 .anyRequest().authenticated();
         http.addFilterBefore(new MyAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();

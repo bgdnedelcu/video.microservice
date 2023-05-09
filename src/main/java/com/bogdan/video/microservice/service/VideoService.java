@@ -12,13 +12,12 @@ import com.bogdan.video.microservice.view.Video;
 import com.bogdan.video.microservice.view.VideoLikes;
 import com.bogdan.video.microservice.view.dto.VideoCommentDto;
 import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
+import com.bogdan.video.microservice.view.dto.VideoDetailsForNonUsers;
 import com.bogdan.video.microservice.view.dto.VideoForHomeDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -43,7 +42,8 @@ public class VideoService {
     private final LikeDao likeDao;
     @Autowired
     private final UtilityService utilityService;
-    public List<VideoForHomeDto> loadVideos( Pageable pageable) {
+
+    public List<VideoForHomeDto> loadVideos(final Pageable pageable) {
         List<Video> videosPage = videoDao.findAll(pageable).getContent();
 
         List<VideoForHomeDto> videoForHomeDtos = new ArrayList<>();
@@ -58,7 +58,12 @@ public class VideoService {
     }
 
     public List<VideoForHomeDto> getVideosFromPlayList(final Long idPlayList) {
+
         final PlayList playList = playListDao.findById(idPlayList).get();
+        int id = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
+        if (playList.getIdUser() != id) {
+            throw new VideoException("Invalid id");
+        }
 
         final List<Video> videosPage = playList.getVideos();
 
@@ -237,6 +242,19 @@ public class VideoService {
         return videoDetailsDto;
     }
 
+    public VideoDetailsForNonUsers getVideoDetailsForNonUsers(final Long videoId) throws VideoException{
+        final Optional<Video> videoOptional = videoDao.findById(videoId);
+        VideoDetailsForNonUsers videoDetailsForNonUsers = new VideoDetailsForNonUsers();
+        if(videoOptional.isEmpty()){
+            throw new VideoException("Not found");
+        }
+        videoDetailsForNonUsers.setVideoTitle(videoOptional.get().getTitle());
+        videoDetailsForNonUsers.setDescription(videoOptional.get().getDescription());
+        String channelName = utilityService.getChannelNameByUserId((long) videoOptional.get().getIdUser());
+        videoDetailsForNonUsers.setVideoChannelName(channelName);
+        return videoDetailsForNonUsers;
+    }
+
     public ResponseEntity getLogUserId() {
         long id = utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken());
         return ResponseEntity.ok().body(id);
@@ -267,6 +285,15 @@ public class VideoService {
             return ResponseEntity.ok().body("Video has been deleted");
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete video");
+        }
+    }
+
+    public ResponseEntity checkVideoId(final Long videoId){
+        Optional<Video> video = videoDao.findById(videoId);
+        if(video.isPresent()){
+            return ResponseEntity.ok().build();
+        }else {
+            return ResponseEntity.notFound().build();
         }
     }
 

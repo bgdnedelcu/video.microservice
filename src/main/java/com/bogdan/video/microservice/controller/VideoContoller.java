@@ -4,10 +4,7 @@ import com.bogdan.video.microservice.constants.AppConstants;
 import com.bogdan.video.microservice.exception.VideoException;
 import com.bogdan.video.microservice.service.VideoService;
 import com.bogdan.video.microservice.view.Video;
-import com.bogdan.video.microservice.view.dto.PlayListVideo;
-import com.bogdan.video.microservice.view.dto.VideoCommentDto;
-import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
-import com.bogdan.video.microservice.view.dto.VideoForHomeDto;
+import com.bogdan.video.microservice.view.dto.*;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -18,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
-
 import java.io.FileNotFoundException;
 import java.util.List;
 
@@ -39,18 +35,6 @@ public class VideoContoller {
         return ResponseEntity.status(HttpStatus.OK).body(videos);
     }
 
-    @GetMapping("search/{text}")
-    public ResponseEntity<List<VideoForHomeDto>> search(@PathVariable("text") final String text) {
-        List<VideoForHomeDto> videos = videoService.loadVideosForSearch(text);
-        return ResponseEntity.status(HttpStatus.OK).body(videos);
-    }
-
-    @PostMapping(value = "upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> upload(@RequestParam("title") String title,
-                                         @RequestParam("description") String description, @RequestParam("file") MultipartFile uploadVideo) {
-        return videoService.uploadVideo(title, description, uploadVideo);
-    }
-
     @GetMapping(value = "play/{videoUrl}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public Mono<FileSystemResource> playVideo(@PathVariable("videoUrl") final String videoUrl)
             throws FileNotFoundException {
@@ -58,22 +42,10 @@ public class VideoContoller {
         return Mono.fromSupplier(() -> new FileSystemResource(AppConstants.STORAGE_PATH + videoUrl + EXTENSION));
     }
 
-    @PostMapping("insertToPlaylist")
-    public ResponseEntity insertToPlaylist(@RequestBody final PlayListVideo playListVideo) {
-        int id = videoService.addVideoToPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
-        return ResponseEntity.ok(id);
-    }
-
-    @PostMapping("removeVideoFromPlaylist")
-    public ResponseEntity<String> removeVideoFromPlayList(@RequestBody final PlayListVideo playListVideo) {
-        int noOfDeletedRows = videoService.removeVideoFromPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
-        return ResponseEntity.status(HttpStatus.OK).body(String.format("deleted %s rows", noOfDeletedRows));
-    }
-
-    @PostMapping("deleteAllVideosFromPlaylist")
-    public ResponseEntity<String> deleteAllVideosFromPlaylist(@RequestBody final PlayListVideo playListVideo) {
-        int noOfDeletedRows = videoService.deleteAllVideosFromPlaylist(playListVideo.getIdPlayList());
-        return ResponseEntity.status(HttpStatus.OK).body(String.format("deleted %s rows", noOfDeletedRows));
+    @GetMapping("search/{text}")
+    public ResponseEntity<List<VideoForHomeDto>> search(@PathVariable("text") final String text) {
+        List<VideoForHomeDto> videos = videoService.loadVideosForSearch(text);
+        return ResponseEntity.status(HttpStatus.OK).body(videos);
     }
 
     @GetMapping("playList/{idplayList}")
@@ -85,17 +57,6 @@ public class VideoContoller {
     public String findVideoTitleByVideoId(@PathVariable("videoId") final Long videoId) {
         return videoService.findVideoTitleByVideoId(videoId);
     }
-
-    @PostMapping("addComment")
-    public void addComment(@RequestBody String content, @RequestParam("idVideo") Long idVideo) {
-        videoService.addComment(content, idVideo);
-    }
-
-    @PostMapping("like/{videoId}")
-    public ResponseEntity likeVideo(@PathVariable("videoId") Long videoId) {
-        return videoService.likeVideo(videoId);
-    }
-
 
     @GetMapping("videoById/{id}")
     public Video getVideoById(@PathVariable("id") final Long id) throws VideoException {
@@ -112,13 +73,13 @@ public class VideoContoller {
         return videoService.getVideoDetails(id);
     }
 
-    @PostMapping("deleteLike/{videoId}")
-    public ResponseEntity deleteLike(@PathVariable("videoId") final Long videoId) {
-        return videoService.deleteLike(videoId);
+    @GetMapping("videoDetailsForNonUsers/{videoId}")
+    public VideoDetailsForNonUsers getVideoDetailsForNonUsers(@PathVariable("videoId") final Long id) throws VideoException {
+        return videoService.getVideoDetailsForNonUsers(id);
     }
 
     @GetMapping("getVideosByChannelName/{channelName}")
-    public List<VideoForHomeDto> getVideosByChannelName(@PathVariable("channelName") final String channelName){
+    public List<VideoForHomeDto> getVideosByChannelName(@PathVariable("channelName") final String channelName) {
         return videoService.getVideoByChannelName(channelName);
     }
 
@@ -127,13 +88,57 @@ public class VideoContoller {
         return videoService.getLogUserId();
     }
 
+    @GetMapping("checkVideoId/{videoId}")
+    public ResponseEntity checkVideoId(@PathVariable("videoId") final Long videoId){
+        return videoService.checkVideoId(videoId);
+    }
+
+    @PostMapping(value = "upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> upload(@RequestParam("title") String title,
+                                         @RequestParam("description") String description, @RequestParam("file") MultipartFile uploadVideo) {
+        return videoService.uploadVideo(title, description, uploadVideo);
+    }
+
+    @PostMapping("insertToPlaylist")
+    public ResponseEntity insertToPlaylist(@RequestBody final PlayListVideo playListVideo) {
+        int id = videoService.addVideoToPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
+        return ResponseEntity.ok(id);
+    }
+
+    @PostMapping("addComment")
+    public void addComment(@RequestBody String content, @RequestParam("idVideo") Long idVideo) {
+        videoService.addComment(content, idVideo);
+    }
+
+    @PostMapping("like/{videoId}")
+    public ResponseEntity likeVideo(@PathVariable("videoId") Long videoId) {
+        return videoService.likeVideo(videoId);
+    }
+
+    @PostMapping("deleteLike/{videoId}")
+    public ResponseEntity deleteLike(@PathVariable("videoId") final Long videoId) {
+        return videoService.deleteLike(videoId);
+    }
+
+    @PostMapping("deleteVideoFromPlaylist")
+    public ResponseEntity<String> removeVideoFromPlayList(@RequestBody final PlayListVideo playListVideo) {
+        int noOfDeletedRows = videoService.removeVideoFromPlaylist(playListVideo.getIdVideo(), playListVideo.getIdPlayList());
+        return ResponseEntity.status(HttpStatus.OK).body(String.format("deleted %s rows", noOfDeletedRows));
+    }
+
+    @PostMapping("deleteAllVideosFromPlaylist")
+    public ResponseEntity<String> deleteAllVideosFromPlaylist(@RequestBody final PlayListVideo playListVideo) {
+        int noOfDeletedRows = videoService.deleteAllVideosFromPlaylist(playListVideo.getIdPlayList());
+        return ResponseEntity.status(HttpStatus.OK).body(String.format("deleted %s rows", noOfDeletedRows));
+    }
+
     @DeleteMapping("deleteCommentById/{id}")
-    public ResponseEntity deleteCommentById(@PathVariable("id") final Long commentId){
+    public ResponseEntity deleteCommentById(@PathVariable("id") final Long commentId) {
         return videoService.deleteCommentById(commentId);
     }
 
     @DeleteMapping("deleteVideoById/{id}")
-    public ResponseEntity deleteVideoById(@PathVariable("id") final Long videoId){
+    public ResponseEntity deleteVideoById(@PathVariable("id") final Long videoId) {
         return videoService.deleteVideoById(videoId);
     }
 
