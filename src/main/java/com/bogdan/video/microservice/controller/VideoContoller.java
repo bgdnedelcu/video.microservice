@@ -83,6 +83,11 @@ public class VideoContoller {
         return videoService.getVideoByChannelName(channelName);
     }
 
+    @GetMapping("videosForChannel/{channelName}")
+    public List<VideoForChannelDto> getVideosForChannel(@PathVariable("channelName") final String channelName) {
+        return videoService.getVideosForChannel(channelName);
+    }
+
     @GetMapping("getLogUserId")
     public ResponseEntity getLogUserId() {
         return videoService.getLogUserId();

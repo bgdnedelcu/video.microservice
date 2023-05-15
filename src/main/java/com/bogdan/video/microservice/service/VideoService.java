@@ -10,10 +10,7 @@ import com.bogdan.video.microservice.view.Comment;
 import com.bogdan.video.microservice.view.PlayList;
 import com.bogdan.video.microservice.view.Video;
 import com.bogdan.video.microservice.view.VideoLikes;
-import com.bogdan.video.microservice.view.dto.VideoCommentDto;
-import com.bogdan.video.microservice.view.dto.VideoDetailsDto;
-import com.bogdan.video.microservice.view.dto.VideoDetailsForNonUsers;
-import com.bogdan.video.microservice.view.dto.VideoForHomeDto;
+import com.bogdan.video.microservice.view.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,6 +90,19 @@ public class VideoService {
         return videoForHomeDtos;
     }
 
+    public List<VideoForChannelDto> getVideosForChannel(final String channelName){
+        final List<Video> videos = videoDao.findAllByIdUser(utilityService.getIdByChannelName(channelName));
+        List<VideoForChannelDto> videosForChannel = new ArrayList<>();
+        for(Video video : videos){
+            VideoForChannelDto videoForChannelDto = new VideoForChannelDto();
+            videoForChannelDto.setVideoId(video.getId());
+            videoForChannelDto.setVideoTitle(video.getTitle());
+            videoForChannelDto.setUserId((long) video.getIdUser());
+            videosForChannel.add(videoForChannelDto);
+        }
+        return videosForChannel;
+    }
+
     public List<VideoForHomeDto> loadVideosForSearch(final String searchText) {
         List<Video> videosPage = videoDao.findByTitleOrDescription(searchText);
         List<VideoForHomeDto> videoForHomeDtos = new ArrayList<>();
@@ -106,7 +116,6 @@ public class VideoService {
         }
         return videoForHomeDtos;
     }
-
 
     public ResponseEntity<String> uploadVideo(final String title, final String description, MultipartFile inputFile) {
         final String EXTENSION = ".mp4";
@@ -146,7 +155,6 @@ public class VideoService {
 
         return playListDao.deleteVideoFromPlaylist(idVideo, idPlayList);
     }
-
 
     public int deleteAllVideosFromPlaylist(final Long idPlayList) {
         return playListDao.deleteAllVideosFromPlaylist(idPlayList);
