@@ -1,10 +1,10 @@
 package com.bogdan.video.microservice.controller;
 
-import com.bogdan.video.microservice.constants.AppConstants;
 import com.bogdan.video.microservice.exception.VideoException;
 import com.bogdan.video.microservice.service.VideoService;
 import com.bogdan.video.microservice.view.Video;
 import com.bogdan.video.microservice.view.dto.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -15,9 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
-import java.io.FileNotFoundException;
+
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("videoplatform/api/video")
 public class VideoContoller {
@@ -36,10 +37,8 @@ public class VideoContoller {
     }
 
     @GetMapping(value = "play/{videoUrl}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public Mono<FileSystemResource> playVideo(@PathVariable("videoUrl") final String videoUrl)
-            throws FileNotFoundException {
-        final String EXTENSION = ".mp4";
-        return Mono.fromSupplier(() -> new FileSystemResource(AppConstants.STORAGE_PATH + videoUrl + EXTENSION));
+    public Mono<FileSystemResource> playVideo(@PathVariable("videoUrl") final String videoUrl) {
+        return videoService.playVideo(videoUrl);
     }
 
     @GetMapping("search/{text}")
@@ -57,7 +56,7 @@ public class VideoContoller {
     public String findVideoTitleByVideoId(@PathVariable("videoId") final Long videoId) {
         return videoService.findVideoTitleByVideoId(videoId);
     }
-   //
+
     @GetMapping("videoById/{id}")
     public Video getVideoById(@PathVariable("id") final Long id) throws VideoException {
         return videoService.getVideoById(id);
@@ -94,7 +93,7 @@ public class VideoContoller {
     }
 
     @GetMapping("checkVideoId/{videoId}")
-    public ResponseEntity checkVideoId(@PathVariable("videoId") final Long videoId){
+    public ResponseEntity checkVideoId(@PathVariable("videoId") final Long videoId) {
         return videoService.checkVideoId(videoId);
     }
 

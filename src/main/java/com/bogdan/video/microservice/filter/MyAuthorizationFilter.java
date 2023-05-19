@@ -4,7 +4,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.bogdan.video.microservice.constants.AppConstants;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,6 +21,8 @@ import java.util.List;
 
 public class MyAuthorizationFilter extends OncePerRequestFilter {
 
+    private static final String SECURITY_KEY = "413F4428472B4B6250655368566D5970337336763979244226452948404D6351";
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -29,7 +30,7 @@ public class MyAuthorizationFilter extends OncePerRequestFilter {
 
             try {
                 String token = authorizationHeader.substring("Bearer ".length());
-                Algorithm algorithm = Algorithm.HMAC256(AppConstants.SECURITY_KEY.getBytes());
+                Algorithm algorithm = Algorithm.HMAC256(SECURITY_KEY.getBytes());
                 JWTVerifier verifier = JWT.require(algorithm).build();
                 DecodedJWT decodedJWT = verifier.verify(token);
                 String username = decodedJWT.getSubject();

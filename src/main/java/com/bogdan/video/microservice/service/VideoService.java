@@ -1,6 +1,5 @@
 package com.bogdan.video.microservice.service;
 
-import com.bogdan.video.microservice.constants.AppConstants;
 import com.bogdan.video.microservice.dao.CommentDao;
 import com.bogdan.video.microservice.dao.LikeDao;
 import com.bogdan.video.microservice.dao.PlayListDao;
@@ -14,11 +13,14 @@ import com.bogdan.video.microservice.view.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -40,6 +42,9 @@ public class VideoService {
     @Autowired
     private final UtilityService utilityService;
 
+    @Value("${component.path}")
+    public String storagePath;
+
     public List<VideoForHomeDto> loadVideos(final Pageable pageable) {
         List<Video> videosPage = videoDao.findAll(pageable).getContent();
 
@@ -52,6 +57,11 @@ public class VideoService {
             videoForHomeDtos.add(videoForHomeDto);
         }
         return videoForHomeDtos;
+    }
+
+    public Mono<FileSystemResource> playVideo(final String videoUrl) {
+        final String EXTENSION = ".mp4";
+        return Mono.fromSupplier(() -> new FileSystemResource(storagePath + videoUrl + EXTENSION));
     }
 
     public List<VideoForHomeDto> getVideosFromPlayList(final Long idPlayList) {
@@ -90,10 +100,10 @@ public class VideoService {
         return videoForHomeDtos;
     }
 
-    public List<VideoForChannelDto> getVideosForChannel(final String channelName){
+    public List<VideoForChannelDto> getVideosForChannel(final String channelName) {
         final List<Video> videos = videoDao.findAllByIdUser(utilityService.getIdByChannelName(channelName));
         List<VideoForChannelDto> videosForChannel = new ArrayList<>();
-        for(Video video : videos){
+        for (Video video : videos) {
             VideoForChannelDto videoForChannelDto = new VideoForChannelDto();
             videoForChannelDto.setVideoId(video.getId());
             videoForChannelDto.setVideoTitle(video.getTitle());
@@ -121,7 +131,7 @@ public class VideoService {
         final String EXTENSION = ".mp4";
         try {
             if (!"video/mp4".equals(inputFile.getContentType())) {
-                throw new VideoException("Format invalid!");
+                throw new VideoException("Invalid format!");
             }
             Video newVideo = new Video();
             newVideo.setTitle(title);
@@ -131,13 +141,13 @@ public class VideoService {
 
 
             byte[] bytes = inputFile.getBytes();
-            Path path = Paths.get(AppConstants.STORAGE_PATH + newVideo.getId() + EXTENSION);
+            Path path = Paths.get(storagePath + newVideo.getId() + EXTENSION);
             Files.write(path, bytes);
 
-            return ResponseEntity.ok().body("Upload reusit");
+            return ResponseEntity.ok().body("Successful upload");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("Upload nereusit");
+            return ResponseEntity.badRequest().body("Upload failed");
         }
     }
 
@@ -169,15 +179,13 @@ public class VideoService {
 
         final Comment comment = new Comment();
         comment.setIdUser(utilityService.getIdFromAccountMicroservice(utilityService.getEmailFromToken()));
-        log.debug(String.valueOf(comment.getIdUser()));
         comment.setContent(content);
-        log.debug(content);
         final Video video = new Video();
         video.setId(videoId);
         comment.setVideo(video);
         commentDao.save(comment);
 
-        return ResponseEntity.ok().body("Comentariul a fost adaugat");
+        return ResponseEntity.ok().body("The comment has been added");
     }
 
     public ResponseEntity likeVideo(final Long videoId) {
@@ -191,7 +199,7 @@ public class VideoService {
 
         likeDao.save(videoLikes);
 
-        return ResponseEntity.ok().body("Like-ul a fost inregistrat");
+        return ResponseEntity.ok().body("The like has been saved");
 
     }
 
@@ -200,7 +208,7 @@ public class VideoService {
 
         likeDao.deleteLike(videoId, Long.valueOf(currentId));
 
-        return ResponseEntity.ok().body("Like-ul a fost actualizat");
+        return ResponseEntity.ok().body("The like has been updated");
 
     }
 
@@ -208,7 +216,7 @@ public class VideoService {
         Optional<Video> video = videoDao.findById(id);
 
         if (video.isEmpty()) {
-            throw new VideoException("Nu am gasit video-ul");
+            throw new VideoException("Video not found");
         }
         return video.get();
 
@@ -250,10 +258,10 @@ public class VideoService {
         return videoDetailsDto;
     }
 
-    public VideoDetailsForNonUsers getVideoDetailsForNonUsers(final Long videoId) throws VideoException{
+    public VideoDetailsForNonUsers getVideoDetailsForNonUsers(final Long videoId) throws VideoException {
         final Optional<Video> videoOptional = videoDao.findById(videoId);
         VideoDetailsForNonUsers videoDetailsForNonUsers = new VideoDetailsForNonUsers();
-        if(videoOptional.isEmpty()){
+        if (videoOptional.isEmpty()) {
             throw new VideoException("Not found");
         }
         videoDetailsForNonUsers.setVideoTitle(videoOptional.get().getTitle());
@@ -288,7 +296,7 @@ public class VideoService {
         videoDao.deleteById(videoId);
 
         final String EXTENSION = ".mp4";
-        File fileToDelete = new File(AppConstants.STORAGE_PATH + videoToDelete.getId() + EXTENSION);
+        File fileToDelete = new File(storagePath + videoToDelete.getId() + EXTENSION);
         if (fileToDelete.delete()) {
             return ResponseEntity.ok().body("Video has been deleted");
         } else {
@@ -296,11 +304,11 @@ public class VideoService {
         }
     }
 
-    public ResponseEntity checkVideoId(final Long videoId){
+    public ResponseEntity checkVideoId(final Long videoId) {
         Optional<Video> video = videoDao.findById(videoId);
-        if(video.isPresent()){
+        if (video.isPresent()) {
             return ResponseEntity.ok().build();
-        }else {
+        } else {
             return ResponseEntity.notFound().build();
         }
     }

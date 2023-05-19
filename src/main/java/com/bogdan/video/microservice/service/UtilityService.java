@@ -3,6 +3,7 @@ package com.bogdan.video.microservice.service;
 import com.bogdan.video.microservice.exception.VideoException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +17,9 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class UtilityService {
+
+    @Value("${service.url}")
+    private String serviceUrl;
 
     private final RestTemplate restTemplate;
 
@@ -34,7 +38,7 @@ public class UtilityService {
             payload.put("email", email);
 
             HttpEntity<Map<String, String>> request = new HttpEntity<>(payload, headers);
-            response = restTemplate.postForEntity("http://localhost:8080/videoplatform/api/account/getIdByEmail", request, Integer.class);
+            response = restTemplate.postForEntity(serviceUrl + "/videoplatform/api/account/getIdByEmail", request, Integer.class);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -42,8 +46,8 @@ public class UtilityService {
         return response.getBody();
     }
 
-    public String getChannelNameByUserId(Long userId) {
-        String url = "http://localhost:8080/videoplatform/api/account/channelNameById/" + userId;
+    public String getChannelNameByUserId(final Long userId) {
+        String url = serviceUrl + "/videoplatform/api/account/channelNameById/" + userId;
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
         if (response.getStatusCode() != HttpStatus.OK) {
             throw new VideoException("Nu am gasit user-ul");
@@ -53,7 +57,7 @@ public class UtilityService {
     }
 
     public synchronized Long getIdByChannelName(final String channelName) {
-        String url = "http://localhost:8080/videoplatform/api/account/getIdByChannelName/" + channelName;
+        String url = serviceUrl + "/videoplatform/api/account/getIdByChannelName/" + channelName;
         ResponseEntity<Long> response = restTemplate.getForEntity(url, Long.class);
         if (response.getStatusCode() != HttpStatus.OK) {
             throw new VideoException("Nu am gasit user-ul");
