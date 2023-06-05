@@ -56,14 +56,14 @@ public class UtilityService {
         return response.getBody();
     }
 
-    public synchronized Long getIdByChannelName(final String channelName) {
+    public Long getIdByChannelName(final String channelName) {
         String url = serviceUrl + "/videoplatform/api/account/getIdByChannelName/" + channelName;
-        ResponseEntity<Long> response = restTemplate.getForEntity(url, Long.class);
-        if (response.getStatusCode() != HttpStatus.OK) {
-            throw new VideoException("Nu am gasit user-ul");
+        try {
+            ResponseEntity<Long> response = restTemplate.getForEntity(url, Long.class);
+            return response.getBody();
+        } catch (Exception e) {
+            throw new VideoException(e.getMessage());
         }
-
-        return response.getBody();
     }
 
 }
